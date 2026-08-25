@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brooklyn Ticketed Events Calendar</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #1a1a1a;
+      background: linear-gradient(135deg, #f0f4f8 0%, #e8f0f7 100%);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      color: white;
+      padding: 32px 24px;
+      border-bottom: 4px solid #f97316;
+    }
+
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .header-title h1 {
+      font-size: 32px;
+      font-weight: 700;
+    }
+
+    .header-title p {
+      font-size: 13px;
+      opacity: 0.9;
+      margin: 4px 0 0 0;
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .loading-indicator {
+      display: inline-block;
+      margin-left: 8px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Main Content */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 32px;
+    }
+
+    /* Calendar */
+    .calendar-card {
+      background: white;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .month-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+
+    .month-nav button {
+      background: #f0f0f0;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .month-nav button:hover {
+      background: #1e3c72;
+      color: white;
+    }
+
+    .month-title {
+      font-size: 20px;
+      font-weight: 700;
+      min-width: 180px;
+      text-align: center;
+    }
+
+    .day-names {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .day-name {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #999;
+      padding: 8px;
+      text-transform: uppercase;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      padding: 8px;
+      border-radius: 10px;
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      cursor: default;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      transition: all 0.2s;
+      position: relative;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .calendar-day.empty {
+      background: transparent;
+      border: none;
+      cursor: default;
+    }
+
+    .calendar-day.has-events {
+      border: 2px solid #f97316;
+      cursor: pointer;
+    }
+
+    .calendar-day.has-events:hover {
+      background: #fff3e0;
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+    }
+
+    .calendar-day.today {
+      background: #1e3c72;
+      color: white;
+      border: 2px solid #1e3c72;
+    }
+
+    .calendar-day-number {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .event-dots {
+      margin-top: 4px;
+      display: flex;
+      gap: 2px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .event-dot {
+      width: 6px;
+      height: 6px;
+      background: #f97316;
+      border-radius: 50%;
+    }
+
+    .event-more {
+      font-size: 10px;
+      color: #f97316;
+      font-weight: 600;
+      margin-left: 2px;
+    }
+
+    /* Sidebar */
+    .details-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 24px;
+    }
+
+    .details-title {
+      margin: 0 0 20px 0;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #999;
+    }
+
+    .event-header {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      padding: 16px;
+      border-radius: 10px;
+      color: white;
+      margin-bottom: 16px;
+    }
+
+    .event-date {
+      font-size: 12px;
+      color: #fff3e0;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .event-title {
+      margin: 4px 0 0 0;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .details-content {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .detail-row {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-label {
+      font-size: 11px;
+      color: #999;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .detail-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .detail-desc {
+      font-size: 12px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .detail-distance {
+      background: #f0f0f0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .map-button {
+      background: #1e3c72;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      text-align: center;
+      font-weight: 600;
+      font-size: 13px;
+      margin-top: 8px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .map-button:hover {
+      background: #f97316;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #999;
+      padding: 20px 0;
+    }
+
+    .empty-state-icon {
+      font-size: 32px;
+      margin: 0 auto 12px;
+      opacity: 0.3;
+    }
+
+    .empty-state p {
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    /* Legend */
+    .legend {
+      margin-top: 32px;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .legend h3 {
+      margin: 0 0 12px 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: #999;
+    }
+
+    .legend-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .legend-item {
+      line-height: 1.5;
+    }
+
+    .legend-item strong {
+      color: #1a1a1a;
+    }
+
+    /* Error/Loading states */
+    .error-banner {
+      background: #ffe0e0;
+      border: 1px solid #ff6b6b;
+      color: #c92a2a;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .grid-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .details-card {
+        position: relative;
+        top: 0;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .calendar-grid {
+        gap: 4px;
+      }
+
+      .calendar-day {
+        padding: 4px;
+        font-size: 11px;
+      }
+
+      .day-name {
+        font-size: 10px;
+        padding: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-content">
+      <div class="header-title">
+        <span style="font-size: 28px;">🎫</span>
+        <div>
+          <h1>Ticketed Events Calendar</h1>
+          <p>Concerts, festivals & one-time events near Brooklyn</p>
+        </div>
+      </div>
+      <div class="header-badge">
+        📅 <span id="eventCount">Loading...</span> upcoming events
+        <span class="loading-indicator" id="loadingIndicator"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container">
+    <div id="errorBanner"></div>
+
+    <div class="grid-layout">
+      <!-- Calendar -->
+      <div class="calendar-card">
+        <!-- Month Navigation -->
+        <div class="month-nav">
+          <button id="prevBtn" onclick="previousMonth()">←</button>
+          <div class="month-title" id="monthTitle">September 2026</div>
+          <button id="nextBtn" onclick="nextMonth()">→</button>
+        </div>
+
+        <!-- Day Names -->
+        <div class="day-names">
+          <div class="day-name">Sun</div>
+          <div class="day-name">Mon</div>
+          <div class="day-name">Tue</div>
+          <div class="day-name">Wed</div>
+          <div class="day-name">Thu</div>
+          <div class="day-name">Fri</div>
+          <div class="day-name">Sat</div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+
+      <!-- Event Details Sidebar -->
+      <div class="details-card">
+        <h3 class="details-title">Select an Event</h3>
+        <div class="empty-state">
+          <div class="empty-state-icon">🎫</div>
+          <p>Click on a date with events to see details</p>
+        </div>
+        <div id="eventDetails" style="display: none;"></div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <h3>📋 WHAT'S INCLUDED</h3>
+      <div class="legend-items">
+        <div class="legend-item">✅ <strong>Ticketed events only</strong> — concerts, festivals, shows</div>
+        <div class="legend-item">✅ <strong>One-time events</strong> — no recurring markets or farmers markets</div>
+        <div class="legend-item">✅ <strong>Venue details</strong> — address, time, and estimated price</div>
+        <div class="legend-item">✅ <strong>Distance calculated</strong> — from 77 19th St, Brooklyn</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration - UPDATE THIS WITH YOUR VERCEL URL AFTER DEPLOYMENT
+    const API_URL = 'https://brooklyn-events-8ahfvcxmf-odejah.vercel.app/api/events'; // You'll replace this after deployment
+    
+    let ticketedEvents = [];
+    let currentDate = new Date(2026, 8, 1);
+    let selectedEvent = null;
+
+    // Fetch events from backend
+    async function fetchEvents() {
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const data = await response.json();
+        if (data.success && Array.isArray(data.events)) {
+          // Convert ISO strings back to Date objects
+          ticketedEvents = data.events.map(event => ({
+            ...event,
+            date: new Date(event.date)
+          }));
+          
+          renderCalendar();
+          document.getElementById('eventCount').textContent = ticketedEvents.length;
+          document.getElementById('loadingIndicator').textContent = '✓';
+          
+          // Clear any previous errors
+          document.getElementById('errorBanner').innerHTML = '';
+        }
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        showError('Unable to fetch events. Please check that your backend is running and the API_URL is correct.');
+        
+        // Fall back to placeholder message
+        document.getElementById('eventCount').textContent = '?';
+      }
+    }
+
+    function showError(message) {
+      document.getElementById('errorBanner').innerHTML = `
+        <div class="error-banner">
+          ⚠️ ${message}
+        </div>
+      `;
+    }
+
+    // Get events for a specific day
+    function getEventsForDay(day) {
+      if (!day) return [];
+      const dateToCheck = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+      return ticketedEvents.filter(event => 
+        event.date.toDateString() === dateToCheck.toDateString()
+      );
+    }
+
+    // Render calendar
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      
+      const monthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+      document.getElementById('monthTitle').textContent = monthName;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      const calendarDays = [];
+      for (let i = 0; i < firstDay; i++) {
+        calendarDays.push(null);
+      }
+      for (let i = 1; i <= daysInMonth; i++) {
+        calendarDays.push(i);
+      }
+
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      calendarDays.forEach((day) => {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day';
+
+        if (!day) {
+          dayEl.classList.add('empty');
+        } else {
+          const dayEvents = getEventsForDay(day);
+          const isToday = new Date(year, month, day).toDateString() === new Date().toDateString();
+
+          if (dayEvents.length > 0) {
+            dayEl.classList.add('has-events');
+            dayEl.onclick = () => selectEvent(dayEvents[0]);
+          }
+
+          if (isToday) {
+            dayEl.classList.add('today');
+          }
+
+          const numberEl = document.createElement('span');
+          numberEl.className = 'calendar-day-number';
+          numberEl.textContent = day;
+          dayEl.appendChild(numberEl);
+
+          if (dayEvents.length > 0) {
+            const dotsEl = document.createElement('div');
+            dotsEl.className = 'event-dots';
+            
+            dayEvents.slice(0, 2).forEach(() => {
+              const dot = document.createElement('div');
+              dot.className = 'event-dot';
+              dotsEl.appendChild(dot);
+            });
+
+            if (dayEvents.length > 2) {
+              const more = document.createElement('span');
+              more.className = 'event-more';
+              more.textContent = `+${dayEvents.length - 2}`;
+              dotsEl.appendChild(more);
+            }
+
+            dayEl.appendChild(dotsEl);
+          }
+        }
+
+        grid.appendChild(dayEl);
+      });
+    }
+
+    // Select event
+    function selectEvent(event) {
+      selectedEvent = event;
+      const detailsDiv = document.getElementById('eventDetails');
+      const emptyState = document.querySelector('.empty-state');
+      
+      const dateStr = event.date.toLocaleDateString('default', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+
+      detailsDiv.innerHTML = `
+        <div class="event-header">
+          <div class="event-date">${dateStr}</div>
+          <h2 class="event-title">${event.title}</h2>
+        </div>
+
+        <div class="details-content">
+          <div class="detail-row">
+            <div class="detail-label">VENUE</div>
+            <div class="detail-value">${event.venue}</div>
+            <div style="font-size: 12px; color: #666; margin-top: 4px;">
+              📍 ${event.address}
+            </div>
+          </div>
+
+          <div class="detail-row">
+            <div class="detail-label">TIME</div>
+            <div class="detail-value">🕐 ${event.time}</div>
+          </div>
+
+          <div class="detail-row">
+            <div class="detail-label">PRICE</div>
+            <div class="detail-value" style="color: #f97316;">💵 ${event.price}</div>
+          </div>
+
+          <div class="detail-row">
+            <div class="detail-label">ABOUT</div>
+            <div class="detail-desc">${event.description}</div>
+          </div>
+
+          <div class="detail-distance">
+            📍 ${event.distance} from reference address
+          </div>
+
+          <button class="map-button" onclick="openMap('${event.venue}', '${event.address}')">
+            View on Map →
+          </button>
+        </div>
+      `;
+
+      detailsDiv.style.display = 'block';
+      emptyState.style.display = 'none';
+    }
+
+    // Open map
+    function openMap(venue, address) {
+      const query = encodeURIComponent(venue + ' ' + address);
+      window.open(`https://www.google.com/maps/search/${query}`, '_blank');
+    }
+
+    // Navigate months
+    function previousMonth() {
+      currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+      selectedEvent = null;
+      document.getElementById('eventDetails').style.display = 'none';
+      document.querySelector('.empty-state').style.display = 'block';
+      renderCalendar();
+    }
+
+    function nextMonth() {
+      currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1);
+      selectedEvent = null;
+      document.getElementById('eventDetails').style.display = 'none';
+      document.querySelector('.empty-state').style.display = 'block';
+      renderCalendar();
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchEvents();
+    });
+  </script>
+</body>
+</html>
